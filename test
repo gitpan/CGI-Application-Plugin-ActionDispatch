@@ -1,0 +1,10 @@
+PERL_DL_NONLAZY=1 /usr/bin/perl "-MExtUtils::Command::MM" "-e" "test_harness(0, 'blib/lib', 'blib/arch')" t/*.t
+t/01_regex......dubious
+	Test returned status 255 (wstat 65280, 0xff00)
+DIED. FAILED tests 2-6
+	Failed 5/6 tests, 16.67% okay
+t/02_path.......dubious
+	Test returned status 255 (wstat 65280, 0xff00)
+DIED. FAILED tests 2-7
+	Failed 6/7 tests, 14.29% okay
+t/03_default....

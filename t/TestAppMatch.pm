@@ -1,4 +1,4 @@
-package TestApp;
+package TestAppMatch;
 
 use base 'CGI::Application';
 use CGI::Application::Plugin::ActionDispatch;
@@ -7,17 +7,10 @@ use CGI::Application::Plugin::ActionDispatch;
 
 sub setup {
 	my $self = shift;
-	$self->start_mode('home');
 	$self->mode_param('test_rm');
 	$self->run_modes( 
-		home => 'home',
 		basic_runmode => 'basic_runmode'
 	);
-}
-
-sub home {
-	my $self = shift;
-	return "Runmode: home\n";
 }
 
 sub basic_runmode {
@@ -25,16 +18,25 @@ sub basic_runmode {
 	return "Runmode: basic_runmode\n";
 }
 
+sub starter_rm : Default {
+	return "Runmode: starter_rm\n";
+}
+
+sub products : Runmode {
+	my $self = shift;
+	return "Runmode: products\n";
+}
+
 sub product : Path('products/') {
 	my $self = shift;
 
-	my($category, $product) = $self->snippets();
+	my($category, $product) = $self->action_args();
 	return "Runmode: product\nCategory: $category\nProduct: $product\n";
 }
 
 sub music : Path('products/music/') {
 	my $self = shift;
-	my $product = $self->snippets();
+	my $product = $self->action_args();
 	return "Runmode: music\nProduct: $product\n";
 }
 
