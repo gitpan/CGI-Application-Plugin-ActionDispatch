@@ -15,7 +15,16 @@ sub home : Default {
 }
 
 sub test : Runmode {
+  my @args = $self->action_args();
   return "Runmode: test\n";
+}
+
+sub fail : Path('fail') {
+  die "Call error mode";
+}
+
+sub error_page : ErrorRunmode {
+  return "Runmode: error_page\n";
 }
 
 1;

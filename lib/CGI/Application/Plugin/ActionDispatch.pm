@@ -6,7 +6,7 @@ use Class::Inspector;
 use CGI::Application::Plugin::ActionDispatch::Attributes;
 require Exporter;
 
-our $VERSION = '0.90';
+our $VERSION = '0.91';
 our @ISA = qw(Exporter);
 our @EXPORT = qw(action_args);
 
@@ -22,7 +22,7 @@ sub CGI::Application::Path :ATTR {
     $data = "/" . $data;
   }
 
-  my $regex = qr/^$data\/?(\/.*)$/;
+  my $regex = qr/^$data\/?(\/.*)?$/;
   push(@{ $_attr_cache{$attr} }, [ $referent, $regex ]);
 }
 
@@ -45,6 +45,11 @@ sub CGI::Application::Default :ATTR {
   $_attr_cache{$attr} = $referent;
 }
 
+sub CGI::Application::ErrorRunmode :ATTR {
+  my ($package, $referent, $attr, $data) = @_;
+  $_attr_cache{$attr} = $referent;
+}
+
 sub import {
   my $caller = caller;
   $caller->add_callback('init', \&_ad_init);
@@ -57,14 +62,19 @@ sub _ad_init {
   my $class = ref $self || $self;
 
   # Setup a hash table of all the methods in the class.
-  $methods{ $self->can($_) } = $_
+  $methods{$self->can($_)} = $_
     foreach @{ Class::Inspector->methods($class) || [] }; #NOTE: This will search through ISA also.
   
   CGI::Application::Plugin::ActionDispatch::Attributes::init();
 
-  if( defined $_attr_cache{'Default'} ) {
-    $self->start_mode('_attr_runmode_default');
-    $self->run_modes('_attr_runmode_default' => $methods{$_attr_cache{'Default'}});
+  if(defined $_attr_cache{'Default'}) {
+    my $runmode = $methods{$_attr_cache{'Default'}};
+    $self->start_mode($runmode);
+    $self->run_modes($runmode => $runmode);
+  }
+
+  if(defined $_attr_cache{'ErrorRunmode'}) {
+    $self->error_mode($methods{$_attr_cache{'ErrorRunmode'}});
   }
 }
 
@@ -79,12 +89,13 @@ sub _ad_prerun {
     if($code) {
       # Make sure the runmode isn't set already and prerun_mode isn't set.
       if(! $self->prerun_mode()) {
-	# Sorta of a hack here to actually get the runmode to run.
-	$self->run_modes('_attr_runmode' => $methods{$code});
-	$self->prerun_mode('_attr_runmode');
+	      # Sorta of a hack here to actually get the runmode to run.
+        my $runmode = $methods{$code};
+        $self->run_modes($runmode => $runmode);
+        $self->prerun_mode($runmode);
 
-	# Set the action_args array.
-	$self->action_args(@args);
+	      # Set the action_args array.
+	      $self->action_args(@args);
       }
 
       last ATTR;
@@ -102,24 +113,25 @@ sub _match_type {
       # We want to match the most accurate Path().  This is
       # done by counting the args, and finding the Path with
       # the fewest amount of args left over. 
-      # I'm not sure if I like this.  This may change.
       if($type eq 'Path') {
-	$args[0] =~ s/^\///;
-	@path_args = split('/', $args[0]);
+        if(@args) {
+          $args[0] =~ s/^\///;
+          @path_args = split('/', $args[0]);
+        }
 
-	# Set min if not defined.
-	$min = scalar(@path_args) if( not defined $min );
+        # Set min if not defined.
+        $min = scalar(@path_args) if( not defined $min );
 
-	# If complete match return.
-	if( scalar(@path_args) == 0 ) {
-	  return ($attr->[0], undef);
-	} elsif(scalar(@path_args) <= $min) {
-	  # Has fewest @path_args so far.
-	  $min = scalar(@path_args);
-	  $code = $attr->[0];
-	}
+        # If complete match return.
+        if( scalar(@path_args) == 0 ) {
+          return ($attr->[0], undef);
+        } elsif(scalar(@path_args) <= $min) {
+          # Has fewest @path_args so far.
+          $min = scalar(@path_args);
+          $code = $attr->[0];
+        }
       } else {
-	return ($attr->[0], @args);
+	      return ($attr->[0], @args);
       }
     }
   }
@@ -135,7 +147,9 @@ sub action_args {
     return;
   }
 
-  return unless defined $self->{__CAP_ACTION_ARGS};
+  print @args, Dumper($self), "\n\n";
+
+  return undef unless defined $self->{__CAP_ACTION_ARGS};
   return wantarray ? @{$self->{__CAP_ACTION_ARGS}} : shift @{$self->{__CAP_ACTION_ARGS}};
 }
 	
@@ -212,6 +226,7 @@ does however takes priority over the Path action.
 =item Path
 
 The Path action is basically a shortcut for a commonly used Regex action.
+
   # http://example.com/products/movies/2
   sub show_product : Path('products/') {
     my $self = shift;
@@ -235,8 +250,10 @@ and stored in action_args().
 
 This attribute will take the method name and run a match on that.
 
-
 =item Default
+
+The default run mode if no match is found.  Essentially the equivalent of the
+start_mode() method.
 
 =back
 
