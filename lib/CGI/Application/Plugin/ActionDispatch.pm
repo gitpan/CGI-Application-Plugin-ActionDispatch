@@ -147,8 +147,6 @@ sub action_args {
     return;
   }
 
-  print @args, Dumper($self), "\n\n";
-
   return undef unless defined $self->{__CAP_ACTION_ARGS};
   return wantarray ? @{$self->{__CAP_ACTION_ARGS}} : shift @{$self->{__CAP_ACTION_ARGS}};
 }
