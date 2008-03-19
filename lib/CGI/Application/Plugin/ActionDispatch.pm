@@ -1,12 +1,11 @@
 package CGI::Application::Plugin::ActionDispatch;
 
 use strict;
-use Data::Dumper;
 use Class::Inspector;
 use CGI::Application::Plugin::ActionDispatch::Attributes;
 require Exporter;
 
-our $VERSION = '0.91';
+our $VERSION = '0.93';
 our @ISA = qw(Exporter);
 our @EXPORT = qw(action_args);
 
