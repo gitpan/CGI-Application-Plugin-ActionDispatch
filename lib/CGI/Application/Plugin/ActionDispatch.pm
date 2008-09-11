@@ -1,11 +1,12 @@
 package CGI::Application::Plugin::ActionDispatch;
 
 use strict;
+use Data::Dumper;
 use Class::Inspector;
 use CGI::Application::Plugin::ActionDispatch::Attributes;
 require Exporter;
 
-our $VERSION = '0.93';
+our $VERSION = '0.95';
 our @ISA = qw(Exporter);
 our @EXPORT = qw(action_args);
 
@@ -22,13 +23,13 @@ sub CGI::Application::Path :ATTR {
   }
 
   my $regex = qr/^$data\/?(\/.*)?$/;
-  push(@{ $_attr_cache{$attr} }, [ $referent, $regex ]);
+  push(@{ $_attr_cache{$class}{$attr} }, [ $referent, $regex ]);
 }
 
 sub CGI::Application::Regex :ATTR {
   my ($package, $referent, $attr, $data) = @_;
   my $regex = qr/$data/;
-  push(@{ $_attr_cache{$attr} }, [ $referent, $regex ]);
+  push(@{ $_attr_cache{$package}{$attr} }, [$referent, $regex ]);
 }
 
 sub CGI::Application::Runmode :ATTR {
@@ -36,17 +37,17 @@ sub CGI::Application::Runmode :ATTR {
 
   $data = $methods{$referent};
   my $regex = qr/^\/$data\/?$/;
-  push(@{ $_attr_cache{$attr} }, [ $referent, $regex ]);
+  push(@{ $_attr_cache{$package}{$attr} }, [ $referent, $regex ]);
 }
 
 sub CGI::Application::Default :ATTR {
   my ($package, $referent, $attr, $data) = @_;
-  $_attr_cache{$attr} = $referent;
+  $_attr_cache{$package}{$attr} = $referent;
 }
 
 sub CGI::Application::ErrorRunmode :ATTR {
   my ($package, $referent, $attr, $data) = @_;
-  $_attr_cache{$attr} = $referent;
+  $_attr_cache{$package}{$attr} = $referent;
 }
 
 sub import {
@@ -66,25 +67,26 @@ sub _ad_init {
   
   CGI::Application::Plugin::ActionDispatch::Attributes::init();
 
-  if(defined $_attr_cache{'Default'}) {
-    my $runmode = $methods{$_attr_cache{'Default'}};
+  if(defined $_attr_cache{$class}{'Default'}) {
+    my $runmode = $methods{$_attr_cache{$class}{'Default'}};
     $self->start_mode($runmode);
     $self->run_modes($runmode => $runmode);
   }
 
-  if(defined $_attr_cache{'ErrorRunmode'}) {
-    $self->error_mode($methods{$_attr_cache{'ErrorRunmode'}});
+  if(defined $_attr_cache{$class}{'ErrorRunmode'}) {
+    $self->error_mode($methods{$_attr_cache{$class}{'ErrorRunmode'}});
   }
 }
 
 sub _ad_prerun {
   my $self = shift;
+  my $class = ref $self || $self;
 
   return unless defined $ENV{PATH_INFO};
 
   my $start_mode = $self->start_mode();
   ATTR: foreach my $type (qw( Runmode Regex Path )) {
-    my($code, @args) = _match_type($type, $ENV{PATH_INFO});
+    my($code, @args) = _match_type($class, $type, $ENV{PATH_INFO});
     if($code) {
       # Make sure the runmode isn't set already and prerun_mode isn't set.
       if(! $self->prerun_mode()) {
@@ -103,11 +105,11 @@ sub _ad_prerun {
 }
 
 sub _match_type {
-  my($type, $path_info) = @_;
+  my($class, $type, $path_info) = @_;
 
   my $min;
   my(@path_args, $code);
-  foreach my $attr (@{ $_attr_cache{$type} }) {
+  foreach my $attr (@{ $_attr_cache{$class}{$type} }) {
     if(my @args = ($path_info =~ $attr->[1])) {
       # We want to match the most accurate Path().  This is
       # done by counting the args, and finding the Path with
@@ -316,7 +318,7 @@ Jason Yates, E<lt>jaywhy@gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2006-2007 by Jason Yates
+Copyright (C) 2006-2008 by Jason Yates
 
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself, either Perl version 5.8.7 or, at your option,

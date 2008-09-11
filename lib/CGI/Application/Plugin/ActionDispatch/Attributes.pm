@@ -2,8 +2,9 @@ package CGI::Application::Plugin::ActionDispatch::Attributes;
 
 use attributes;
 use strict;
+use Data::Dumper;
 
-our $VERSION = '0.02';
+our $VERSION = '0.1';
 
 my @attributes;
 my %attr_handlers;
