@@ -1,0 +1,15 @@
+--- #YAML:1.0
+name:                CGI-Application-Plugin-ActionDispatch
+version:             0.96
+abstract:            ~
+license:             ~
+author:              ~
+generated_by:        ExtUtils::MakeMaker version 6.44
+distribution_type:   module
+requires:     
+    Attribute::Handlers:           0
+    CGI::Application:              4.0
+    Class::Inspector:              0
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3
