@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                CGI-Application-Plugin-ActionDispatch
-version:             0.96
+version:             0.97
 abstract:            ~
 license:             ~
 author:              ~

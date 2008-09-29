@@ -13,4 +13,5 @@ t/TestAppPath.pm
 t/TestAppRegex.pm
 t/TestAppRunmode.pm
 lib/CGI/Application/Plugin/ActionDispatch.pm
+lib/CGI/Application/Plugin/ActionDispatch/Attributes.pm
 META.yml                                 Module meta-data (added by MakeMaker)
